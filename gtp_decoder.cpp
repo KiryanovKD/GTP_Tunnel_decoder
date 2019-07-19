@@ -30,7 +30,8 @@ void parse_file(std::string readPacketsFromPcapFileName, std::string savePackets
 
     // read the first (and only) packet from the file
     pcpp::RawPacket rawPacket;
-    u_int8_t data[9000];
+    u_int8_t *data;
+    pcpp::Layer *Eth;
 
     u_int8_t magic_bin = 0b00010000;
 
@@ -46,7 +47,7 @@ void parse_file(std::string readPacketsFromPcapFileName, std::string savePackets
    			continue;
 
 
-    	pcpp::Layer *Eth = parsedPacket.detachLayer(pcpp::Ethernet);
+    	Eth = parsedPacket.detachLayer(pcpp::Ethernet);
 
 
     	if(*(Eth->getData()+Eth->getDataLen()-2) != 0x81 || *(Eth->getData()+Eth->getDataLen()-1) != 0x00)
@@ -55,6 +56,7 @@ void parse_file(std::string readPacketsFromPcapFileName, std::string savePackets
         *(Eth->getData()+Eth->getDataLen()-2) = 0x08;
 
 
+        data = new u_int8_t[(int)parsedPacket.getLastLayer()->getDataLen()];
         parsedPacket.getLastLayer()->copyData(data);
 
 
@@ -62,8 +64,8 @@ void parse_file(std::string readPacketsFromPcapFileName, std::string savePackets
 
         int ipv4_start = 0;
  		for(ipv4_start = 0; ipv4_start < (int)parsedPacket.getLastLayer()->getDataLen()-1; ipv4_start++){
- 			if(data[ipv4_start] == 0x45 && data[ipv4_start+1] == 0x00){
- 				pcpp::PayloadLayer newPayload(&data[ipv4_start], ((int)parsedPacket.getLastLayer()->getHeaderLen()-ipv4_start), true);
+ 			if(*(data+ipv4_start) == 0x45 && *(data+ipv4_start+1) == 0x00){
+ 				pcpp::PayloadLayer newPayload((data+ipv4_start), ((int)parsedPacket.getLastLayer()->getHeaderLen()-ipv4_start), true);
         		resultPacket.addLayer(Eth);
         		resultPacket.addLayer(&newPayload);
         		break;
@@ -73,14 +75,16 @@ void parse_file(std::string readPacketsFromPcapFileName, std::string savePackets
  			continue;
 
 
+ 		data = NULL;
+ 		Eth = NULL;
 		writer.writePacket(*(resultPacket.getRawPacket()));
-
-		//data = 0;
 
 	}
 
 
     // close the file
+    free(data);
+    free(Eth);
     reader.close();
     writer.close();
 
