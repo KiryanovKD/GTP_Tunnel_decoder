@@ -60,23 +60,23 @@ void parse_file(std::string readPacketsFromPcapFileName, std::string savePackets
  		//printf("%s\n", );
 
         int ipv4_start = 0;
- 		for(ipv4_start = 0; ipv4_start < (int)parsedPacket.getLastLayer()->getDataLen()-1; ipv4_start++){
- 			if(data[ipv4_start] == 0x45 && data[ipv4_start+1] == 0x00){
- 				pcpp::PayloadLayer newPayload(&data[ipv4_start], ((int)parsedPacket.getLastLayer()->getHeaderLen()-ipv4_start), true);
+ 	for(ipv4_start = 0; ipv4_start < (int)parsedPacket.getLastLayer()->getDataLen()-1; ipv4_start++){
+ 		if(data[ipv4_start] == 0x45 && data[ipv4_start+1] == 0x00){
+ 			pcpp::PayloadLayer newPayload(&data[ipv4_start], ((int)parsedPacket.getLastLayer()->getHeaderLen()-ipv4_start), true);
         		resultPacket.addLayer(Eth);
         		resultPacket.addLayer(&newPayload);
         		break;
- 			}
  		}
- 		if(ipv4_start > (int)parsedPacket.getLastLayer()->getDataLen()-2)
- 			continue;
+ 	}
+ 	if(ipv4_start > (int)parsedPacket.getLastLayer()->getDataLen()-2)
+ 		continue;
 
        // delete[] data;
         //delete Eth;
 
        // data = NULL;
        // Eth = NULL;
-		writer.writePacket(*(resultPacket.getRawPacket()));
+	writer.writePacket(*(resultPacket.getRawPacket()));
 
 	}
 
